@@ -1,0 +1,4 @@
+在项目根目录执行：
+
+```bash
+pip freeze > requirements.txt
