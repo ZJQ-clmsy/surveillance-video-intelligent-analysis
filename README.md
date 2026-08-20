@@ -35,19 +35,63 @@
 ### 安装步骤
 
 ```bash
-# 1. 克隆项目
+1. 克隆项目
 git clone https://github.com/zjqoyn/surveillance-video-intelligent-analysis.git
 cd surveillance-video-intelligent-analysis
 
-# 2. 创建虚拟环境（推荐）
+2. 创建虚拟环境（推荐）
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 3. 安装依赖
+3. 安装依赖
 pip install -r requirements.txt
 
-# 4. 下载模型文件
-# 将 aqm.pt 放入 models/ 目录下
+4. 下载模型文件
+将 aqm.pt 放入 models/ 目录下
 
-# 5. 启动服务
+5. 启动服务
 python app.py
+```
+启动后访问 http://127.0.0.1:5000 即可使用
+
+## 📸 效果展示
+
+### 实时监控
+![实时监控图](docs/images/monitor.png)
+
+### AI智能检测
+![AI智能检测图](docs/images/detect.png)
+
+### 数据统计
+![实时监控图](docs/images/stats.png)
+
+## 📁 项目结构
+```text
+├── app.py                 # Flask 主程序
+├── models/                # 模型文件目录
+├── static/                # 静态资源
+│   ├── picture/           # 抓拍图片（运行时生成）
+│   └── illegal/           # 违规图片（运行时生成）
+├── templates/             # HTML 模板
+│   └── index.html         # 主页面
+├── requirements.txt       # Python 依赖
+├── .gitignore             # Git 忽略文件
+└── README.md              # 项目说明
+```
+
+## 📝 待办事项 / 未来改进
+
+  支持多路视频流并行处理
+  
+  GPU 加速推理
+  
+  接入 MySQL 数据库替代 CSV
+  
+  添加更多检测类别（反光衣、安全绳等）
+
+##  🙏 致谢
+Ultralytics YOLO
+
+OpenCV
+
+Flask
