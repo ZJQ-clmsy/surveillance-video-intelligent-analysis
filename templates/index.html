@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全帽 AI 智能监测系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --primary-color: #2c3e50;
+            --active-color: #3498db;
+            --danger-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+            color: #2c3e50;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #3e4f5f;
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .nav-item {
+            padding: 16px 22px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid transparent;
+            font-size: 0.95rem;
+        }
+        .nav-item:hover { background: #3e4f5f; }
+        .nav-item.active {
+            background: #1a252f;
+            border-left: 4px solid var(--active-color);
+            color: var(--active-color);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+        }
+        .module-section {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.4s ease;
+        }
+        .module-section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            margin: 0 auto;
+            line-height: 0;
+        }
+        .video-container img { width: 100%; height: auto; }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+        }
+        .toolbar label { font-size: 0.9rem; color: #636e72; }
+        .toolbar input, .toolbar select {
+            padding: 9px 10px;
+            border: 1px solid #dfe6e9;
+            border-radius: 6px;
+            outline: none;
+        }
+        .btn {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: white;
+            background: var(--active-color);
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+        .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn.gray { background: #7f8c8d; }
+        .btn.green { background: var(--success-color); }
+        .btn.red { background: var(--danger-color); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+        .stat-card h3 {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .stat-card p {
+            margin: 10px 0 0;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+        }
+        .panel h3 { margin-top: 0; }
+        .chart-box { position: relative; height: 320px; }
+
+        .ranking-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .ranking-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.95rem;
+        }
+        .ranking-list li strong { color: var(--danger-color); }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .gallery-item {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #ff7675;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #dfe6e9;
+        }
+        .gallery-item .info {
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #636e72;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #ecf0f1;
+            text-align: left;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+        th { background: #34495e; color: white; }
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            color: white;
+            font-size: 0.78rem;
+        }
+        .tag.safe { background: var(--success-color); }
+        .tag.illegal { background: var(--danger-color); }
+        .empty-tip {
+            padding: 24px;
+            text-align: center;
+            color: #7f8c8d;
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow: auto; height: auto; }
+            .sidebar { width: 100%; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .main-content { overflow: visible; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">监测系统控制台</div>
+        <div class="nav-item active" onclick="showModule(event, 'live')">📸 实时监控</div>
+        <div class="nav-item" onclick="showModule(event, 'detect')">🔍 实时检测</div>
+        <div class="nav-item" onclick="showModule(event, 'gallery')">🚨 违规照片库</div>
+        <div class="nav-item" onclick="showModule(event, 'stats')">📊 数据统计分析</div>
+        <div class="nav-item" onclick="showModule(event, 'logs')">🧾 系统日志</div>
+        <div class="nav-item" onclick="showModule(event, 'today')">🔔 今日告警</div>
+        <div class="nav-item" onclick="showModule(event, 'export')">📤 数据导出</div>
+    </div>
+
+    <div class="main-content">
+        <div id="module-live" class="module-section active">
+            <h2>原始实时画面</h2>
+            <div class="video-container">
+                <img src="/video_feed" alt="正在加载视频流...">
+            </div>
+        </div>
+
+        <div id="module-detect" class="module-section">
+            <h2>AI 智能识别画面</h2>
+            <div class="video-container">
+                <img src="/detect_feed" alt="正在加载检测流...">
+            </div>
+        </div>
+
+        <div id="module-gallery" class="module-section">
+            <h2>违规记录抓拍</h2>
+            <div class="toolbar">
+                <label>开始日期 <input type="date" id="gallery-start"></label>
+                <label>结束日期 <input type="date" id="gallery-end"></label>
+                <button class="btn" onclick="loadGallery()">查询</button>
+                <button class="btn gray" onclick="resetGalleryFilter()">重置</button>
+            </div>
+            <div id="gallery" class="gallery-grid"></div>
+        </div>
+
+        <div id="module-stats" class="module-section">
+            <h2>系统数据概览</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>累计记录次数</h3><p id="stat-total">0</p></div>
+                <div class="stat-card"><h3>安全通行次数</h3><p id="stat-safe" style="color: #27ae60;">0</p></div>
+                <div class="stat-card"><h3>违规警告次数</h3><p id="stat-illegal" style="color: #e74c3c;">0</p></div>
+                <div class="stat-card"><h3>违规率</h3><p id="stat-violation-rate" style="color: #e74c3c;">0%</p></div>
+                <div class="stat-card"><h3>今日违规次数</h3><p id="stat-today-illegal" style="color: #f39c12;">0</p></div>
+                <div class="stat-card"><h3>安全帽佩戴合规率</h3><p id="stat-compliance-rate" style="color: #27ae60;">0%</p></div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3>安全 / 违规占比</h3>
+                    <div class="chart-box"><canvas id="pieChart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <h3>最近 7 天违规趋势</h3>
+                    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <h3>每日违规排行榜</h3>
+                    <ul id="ranking-list" class="ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="module-logs" class="module-section">
+            <h2>系统日志模块</h2>
+            <div class="toolbar">
+                <label>开始日期 <input type="date" id="logs-start"></label>
+                <label>结束日期 <input type="date" id="logs-end"></label>
+                <label>
+                    <select id="logs-type">
+                        <option value="all">全部记录</option>
+                        <option value="illegal">仅违规记录</option>
+                    </select>
+                </label>
+                <button class="btn" onclick="loadLogs()">查询</button>
+                <button class="btn gray" onclick="resetLogsFilter()">重置</button>
+            </div>
+            <div id="logs-table-wrap"></div>
+        </div>
+
+        <div id="module-today" class="module-section">
+            <h2>今日告警模块</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>今日日期</h3><p id="today-date" style="font-size: 1.5rem;">-</p></div>
+                <div class="stat-card"><h3>今日违规次数</h3><p id="today-count" style="color: #e74c3c;">0</p></div>
+            </div>
+            <div id="today-gallery" class="gallery-grid"></div>
+        </div>
+
+        <div id="module-export" class="module-section">
+            <h2>数据导出模块</h2>
+            <div class="toolbar">
+                <label>开始日期 <input type="date" id="export-start"></label>
+                <label>结束日期 <input type="date" id="export-end"></label>
+                <label>
+                    <select id="export-type">
+                        <option value="csv">CSV</option>
+                        <option value="xlsx">Excel</option>
+                    </select>
+                </label>
+                <label>
+                    <select id="export-range">
+                        <option value="1">仅导出违规记录</option>
+                        <option value="0">导出全部记录</option>
+                    </select>
+                </label>
+                <button class="btn green" onclick="exportData()">导出数据</button>
+            </div>
+            <div class="panel">
+                <h3>导出字段</h3>
+                <p>日期、时间、图片路径、违规类型</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myPieChart = null;
+        let myTrendChart = null;
+
+        function showModule(evt, modId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.module-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('module-' + modId).classList.add('active');
+
+            if (modId === 'gallery') loadGallery();
+            if (modId === 'stats') loadStats();
+            if (modId === 'logs') loadLogs();
+            if (modId === 'today') loadTodayAlerts();
+        }
+
+        function buildQuery(startId, endId) {
+            const params = new URLSearchParams();
+            const start = document.getElementById(startId)?.value;
+            const end = document.getElementById(endId)?.value;
+            if (start) params.append('start_date', start);
+            if (end) params.append('end_date', end);
+            return params;
+        }
+
+        function formatPath(path) {
+            return path || '-';
+        }
+
+        function renderEmpty(container, text) {
+            container.innerHTML = `<div class="empty-tip">${text}</div>`;
+        }
+
+        function loadGallery() {
+            const params = buildQuery('gallery-start', 'gallery-end');
+            fetch('/api/illegal_images?' + params.toString())
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('gallery');
+                    if (!data.length) {
+                        renderEmpty(container, '当前日期范围内暂无违规图片');
+                        return;
+                    }
+                    container.innerHTML = data.map(item => `
+                        <div class="gallery-item">
+                            <img src="/static/${item.path}" alt="违规抓拍">
+                            <div class="info">
+                                <div>发现日期：${item.date}</div>
+                                <div>发现时间：${item.time}</div>
+                                <div>违规类型：${item.violation_type || '未佩戴安全帽'}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function resetGalleryFilter() {
+            document.getElementById('gallery-start').value = '';
+            document.getElementById('gallery-end').value = '';
+            loadGallery();
+        }
+
+        function loadStats() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('stat-total').innerText = data.total;
+                    document.getElementById('stat-safe').innerText = data.safe;
+                    document.getElementById('stat-illegal').innerText = data.illegal;
+                    document.getElementById('stat-violation-rate').innerText = `${data.violation_rate}%`;
+                    document.getElementById('stat-today-illegal').innerText = data.today_illegal;
+                    document.getElementById('stat-compliance-rate').innerText = `${data.compliance_rate}%`;
+
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    if (myPieChart) myPieChart.destroy();
+                    myPieChart = new Chart(pieCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['安全', '未佩戴安全帽'],
+                            datasets: [{
+                                data: [data.safe, data.illegal],
+                                backgroundColor: ['#2ecc71', '#e74c3c']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+
+                    const trendCtx = document.getElementById('trendChart').getContext('2d');
+                    if (myTrendChart) myTrendChart.destroy();
+                    myTrendChart = new Chart(trendCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.seven_days_trend.labels,
+                            datasets: [{
+                                label: '违规次数',
+                                data: data.seven_days_trend.values,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                                fill: true,
+                                tension: 0.35
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }
+                    });
+
+                    const ranking = document.getElementById('ranking-list');
+                    if (!data.daily_ranking.length) {
+                        ranking.innerHTML = '<li>暂无违规排行数据</li>';
+                    } else {
+                        ranking.innerHTML = data.daily_ranking.map(item => `
+                            <li><span>${item.date}</span><strong>${item.count} 次</strong></li>
+                        `).join('');
+                    }
+                });
+        }
+
+        function loadLogs() {
+            const params = buildQuery('logs-start', 'logs-end');
+            const type = document.getElementById('logs-type').value;
+            if (type === 'illegal') params.append('only_illegal', '1');
+
+            fetch('/api/logs?' + params.toString())
+                .then(res => res.json())
+                .then(data => {
+                    const wrap = document.getElementById('logs-table-wrap');
+                    if (!data.length) {
+                        renderEmpty(wrap, '暂无系统日志记录');
+                        return;
+                    }
+                    wrap.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>时间</th>
+                                    <th>是否违规</th>
+                                    <th>违规类型</th>
+                                    <th>图片路径</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(row => `
+                                    <tr>
+                                        <td>${row.date || '-'}</td>
+                                        <td>${row.time || '-'}</td>
+                                        <td>${row.is_illegal === '1' ? '<span class="tag illegal">违规</span>' : '<span class="tag safe">安全</span>'}</td>
+                                        <td>${row.violation_type || '-'}</td>
+                                        <td>${formatPath(row.image_path)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                });
+        }
+
+        function resetLogsFilter() {
+            document.getElementById('logs-start').value = '';
+            document.getElementById('logs-end').value = '';
+            document.getElementById('logs-type').value = 'all';
+            loadLogs();
+        }
+
+        function loadTodayAlerts() {
+            fetch('/api/today_alerts')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('today-date').innerText = data.date;
+                    document.getElementById('today-count').innerText = data.count;
+                    const container = document.getElementById('today-gallery');
+                    if (!data.records.length) {
+                        renderEmpty(container, '今天暂无未佩戴安全帽告警');
+                        return;
+                    }
+                    container.innerHTML = data.records.map(item => `
+                        <div class="gallery-item">
+                            <img src="/static/${item.image_path}" alt="今日告警">
+                            <div class="info">
+                                <div>告警时间：${item.date} ${item.time}</div>
+                                <div>违规类型：${item.violation_type || '未佩戴安全帽'}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function exportData() {
+            const params = buildQuery('export-start', 'export-end');
+            params.append('type', document.getElementById('export-type').value);
+            params.append('only_illegal', document.getElementById('export-range').value);
+            window.location.href = '/api/export?' + params.toString();
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Python 编译缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+
+# 模型权重文件（核心！避免上传大文件）
+*.pt
+*.pth
+*.onnx
+*.engine
+models/*.pt
+
+# 系统生成的图片和日志（运行时产生的数据）
+static/picture/
+static/illegal/
+static/records.csv
+
+# 环境变量
+.env
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
